@@ -71,8 +71,6 @@ public class SwerveDrivetrain extends SubsystemBase {
     )
   );
 
- 
-
   private SwerveModuleMK3[] modules = new SwerveModuleMK3[] {
 
     new SwerveModuleMK3(new TalonFX(frontLeftDriveId), new TalonFX(frontLeftSteerId), new CANCoder(frontLeftCANCoderId), Rotation2d.fromDegrees(frontLeftOffset)), // Front Left
@@ -115,6 +113,10 @@ public class SwerveDrivetrain extends SubsystemBase {
       //module.setDesiredState(state);
       SmartDashboard.putNumber("gyro Angle", gyro.getAngle());
     }
+  }
+
+  public void Calibrate() {
+    this.drive(0, 0, 10, false, true);
   }
 
   @Override
