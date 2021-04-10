@@ -26,13 +26,13 @@ public class RobotContainer {
 
   private final DriveSubsystem m_driveSubsystem = new DriveSubsystem(controller);
 
-  private final SwerveDrivetrain drivetrain = new SwerveDrivetrain();
+  // private final SwerveDrivetrain drivetrain = new SwerveDrivetrain();
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
     // drivetrain.setDefaultCommand(new SwerveDriveCommand(drivetrain, controller));
-    drivetrain.setDefaultCommand(new NewSwerve(m_driveSubsystem));
+    m_driveSubsystem.setDefaultCommand(new NewSwerve(m_driveSubsystem));
   }
 }
