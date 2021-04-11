@@ -26,7 +26,6 @@ public class DriveSubsystem extends SubsystemBase {
   public static final int backLeftDriveId = 9;
   public static final int backLeftCANCoderId = 22;
   public static final int backLeftSteerId = 2;
-  // put your can Id's here!
 
   public static final int backRightDriveId = 3;
   public static final int backRightCANCoderId = 23;
@@ -51,7 +50,7 @@ public class DriveSubsystem extends SubsystemBase {
   public void SwerveDrive() {
     double x = m_baseJS.getRawAxis(0);
     double y = m_baseJS.getRawAxis(1);
-    double z = m_baseJS.getRawAxis(4);
+    double z = m_baseJS.getRawAxis(3);
 
     double FWD = -y;
     double STR = x;
@@ -110,11 +109,11 @@ public class DriveSubsystem extends SubsystemBase {
     frontLeftPower.set(ControlMode.PercentOutput, ws2);
     frontLeftAngle.set(ControlMode.PercentOutput, wa2);
 
-    backRightPower.set(ControlMode.PercentOutput, ws3);
-    backRightAngle.set(ControlMode.PercentOutput, wa3);
+    backLeftPower.set(ControlMode.PercentOutput, ws3);
+    backLeftAngle.set(ControlMode.PercentOutput, wa3);
 
-    backLeftPower.set(ControlMode.PercentOutput, ws4);
-    backLeftAngle.set(ControlMode.PercentOutput, wa4);
+    backRightPower.set(ControlMode.PercentOutput, ws4);
+    backRightAngle.set(ControlMode.PercentOutput, wa4);
   }
 
   @Override
