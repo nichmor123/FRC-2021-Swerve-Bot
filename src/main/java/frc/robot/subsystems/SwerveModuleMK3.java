@@ -1,12 +1,18 @@
 package frc.robot.subsystems;
 
+import java.util.function.DoubleSupplier;
+
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.IMotorController;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.RemoteSensorSource;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.CANCoderConfiguration;
 
@@ -50,10 +56,13 @@ public class SwerveModuleMK3 {
     angleTalonFXConfiguration.remoteFilter0.remoteSensorDeviceID = canCoder.getDeviceID();
     angleTalonFXConfiguration.remoteFilter0.remoteSensorSource = RemoteSensorSource.CANCoder;
 
+    // angleMotor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 0, 1000);
     angleTalonFXConfiguration.primaryPID.selectedFeedbackSensor = FeedbackDevice.RemoteSensor0;
-    angleMotor.configAllSettings(angleTalonFXConfiguration);
+    // angleMotor.configAllSettings(new TalonSRXConfiguration());
     angleMotor.setNeutralMode(NeutralMode.Brake); // not needed but nice to keep the robot stopped when you want it
                                                   // stopped
+
+    angleMotor.configAllSettings(angleTalonFXConfiguration);
 
     TalonFXConfiguration driveTalonFXConfiguration = new TalonFXConfiguration();
 
@@ -83,6 +92,18 @@ public class SwerveModuleMK3 {
     return canCoder.getAbsolutePosition(); // include angle offset
   }
 
+  public IMotorController getMotor() {
+    return angleMotor;
+  }
+
+  public void setFollower(IMotorController master) {
+    angleMotor.follow(master);
+  }
+
+  public void set(double speed) {
+    angleMotor.set(ControlMode.PercentOutput, speed, DemandType.AuxPID, 2);
+  }
+
   // :)
   /**
    * Set the speed + rotation of the swerve module from a SwerveModuleState object
@@ -90,7 +111,7 @@ public class SwerveModuleMK3 {
    * @param desiredState - A SwerveModuleState representing the desired new state
    *                     of the module
    */
-  public void setDesiredState(SwerveModuleState desiredState) {
+  public void setDesiredState(SwerveModuleState desiredState, double x) {
 
     Rotation2d currentRotation = getAngle();
     SwerveModuleState state = SwerveModuleState.optimize(desiredState, currentRotation);
@@ -106,8 +127,10 @@ public class SwerveModuleMK3 {
     double currentTicks = canCoder.getPosition() / canCoder.configGetFeedbackCoefficient();
     double desiredTicks = currentTicks + deltaTicks;
 
+    System.out.println(x);
+
     // below is a line to comment out from step 5
-    angleMotor.set(ControlMode.Position, desiredTicks);
+    angleMotor.set(ControlMode.PercentOutput, x, DemandType.AuxPID, 9);
 
     double feetPerSecond = Units.metersToFeet(state.speedMetersPerSecond);
 

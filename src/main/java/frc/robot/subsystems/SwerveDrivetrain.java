@@ -4,7 +4,9 @@
 
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.IMotorController;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.sensors.CANCoder;
 
 import edu.wpi.first.wpilibj.geometry.Translation2d;
@@ -27,10 +29,10 @@ public class SwerveDrivetrain extends SubsystemBase {
 
   // this is where you put the angle offsets you got from the smart dashboard
 
-  public static double frontLeftOffset = 0;
-  public static double frontRightOffset = 0;
-  public static double backLeftOffset = 0;
-  public static double backRightOffset = 0;
+  public static double frontLeftOffset = 238;
+  public static double frontRightOffset = 135;
+  public static double backLeftOffset = 199;
+  public static double backRightOffset = 323;
 
   // put your can Id's here!
   public static final int frontLeftDriveId = 4;
@@ -39,7 +41,7 @@ public class SwerveDrivetrain extends SubsystemBase {
   // put your can Id's here!
   public static final int frontRightDriveId = 8;
   public static final int frontRightCANCoderId = 21;
-  public static final int frontRightSteerId = 6;
+  public static final int frontRightSteerId = 5;
   // put your can Id's here!
   public static final int backLeftDriveId = 9;
   public static final int backLeftCANCoderId = 22;
@@ -94,12 +96,12 @@ public class SwerveDrivetrain extends SubsystemBase {
         ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, Rotation2d.fromDegrees(-gyro.getAngle()))
         : new ChassisSpeeds(xSpeed, ySpeed, rot));
     SwerveDriveKinematics.normalizeWheelSpeeds(states, kMaxSpeed);
-    for (int i = 0; i < states.length; i++) {
+    for (int i = 0; i != states.length; i++) {
       SwerveModuleMK3 module = modules[i];
       SwerveModuleState state = states[i];
       SmartDashboard.putNumber(String.valueOf(i), module.getRawAngle());
       // below is a line to comment out from step 5
-      module.setDesiredState(state);
+      module.setDesiredState(state, rot);
       SmartDashboard.putNumber("gyro Angle", gyro.getAngle());
     }
   }
