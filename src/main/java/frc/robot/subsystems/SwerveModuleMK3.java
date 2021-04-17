@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.RemoteSensorSource;
@@ -48,10 +49,11 @@ public class SwerveModuleMK3 {
     // Use the CANCoder as the remote sensor for the primary TalonFX PID
     angleTalonFXConfiguration.remoteFilter0.remoteSensorDeviceID = canCoder.getDeviceID();
     angleTalonFXConfiguration.remoteFilter0.remoteSensorSource = RemoteSensorSource.CANCoder;
-    
+
     angleTalonFXConfiguration.primaryPID.selectedFeedbackSensor = FeedbackDevice.RemoteSensor0;
     angleMotor.configAllSettings(angleTalonFXConfiguration);
-    angleMotor.setNeutralMode(NeutralMode.Brake); //not needed but nice to keep the robot stopped when you want it stopped
+    angleMotor.setNeutralMode(NeutralMode.Brake); // not needed but nice to keep the robot stopped when you want it
+                                                  // stopped
 
     TalonFXConfiguration driveTalonFXConfiguration = new TalonFXConfiguration();
 
@@ -68,43 +70,50 @@ public class SwerveModuleMK3 {
     canCoder.configAllSettings(canCoderConfiguration);
   }
 
-
   /**
    * Gets the relative rotational position of the module
+   * 
    * @return The relative rotational position of the angle motor in degrees
    */
   public Rotation2d getAngle() {
-    return Rotation2d.fromDegrees(canCoder.getAbsolutePosition()); //include angle offset
+    return Rotation2d.fromDegrees(canCoder.getAbsolutePosition()); // include angle offset
   }
+
   public double getRawAngle() {
-    return canCoder.getAbsolutePosition(); //include angle offset
+    return canCoder.getAbsolutePosition(); // include angle offset
   }
-  //:)
+
+  // :)
   /**
    * Set the speed + rotation of the swerve module from a SwerveModuleState object
-   * @param desiredState - A SwerveModuleState representing the desired new state of the module
+   * 
+   * @param desiredState - A SwerveModuleState representing the desired new state
+   *                     of the module
    */
   public void setDesiredState(SwerveModuleState desiredState) {
 
     Rotation2d currentRotation = getAngle();
     SwerveModuleState state = SwerveModuleState.optimize(desiredState, currentRotation);
-    
-    // Find the difference between our current rotational position + our new rotational position
+
+    // Find the difference between our current rotational position + our new
+    // rotational position
     Rotation2d rotationDelta = state.angle.minus(currentRotation);
-    
-    // Find the new absolute position of the module based on the difference in rotation
+
+    // Find the new absolute position of the module based on the difference in
+    // rotation
     double deltaTicks = (rotationDelta.getDegrees() / 360) * kEncoderTicksPerRotation;
     // Convert the CANCoder from it's position reading back to ticks
     double currentTicks = canCoder.getPosition() / canCoder.configGetFeedbackCoefficient();
     double desiredTicks = currentTicks + deltaTicks;
 
-    //below is a line to comment out from step 5
-    //angleMotor.set(TalonFXControlMode.Position, desiredTicks);
+    // below is a line to comment out from step 5
+    angleMotor.set(ControlMode.Position, desiredTicks);
 
     double feetPerSecond = Units.metersToFeet(state.speedMetersPerSecond);
 
-    //below is a line to comment out from step 5
-    //driveMotor.set(TalonFXControlMode.PercentOutput, feetPerSecond / SwerveDrivetrain.kMaxSpeed);
+    // below is a line to comment out from step 5
+    // driveMotor.set(TalonFXControlMode.PercentOutput, feetPerSecond /
+    // SwerveDrivetrain.kMaxSpeed);
   }
 
 }

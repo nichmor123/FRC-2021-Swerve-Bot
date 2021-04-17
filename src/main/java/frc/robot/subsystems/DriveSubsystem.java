@@ -6,12 +6,15 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
-
+import com.ctre.phoenix.sensors.CANCoder;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
 
 public class DriveSubsystem extends SubsystemBase {
+  private static final ControlMode MOTOR_OUTPUT = ControlMode.PercentOutput;
+
   /** Creates a new DriveSubsystem. */
   private Joystick m_baseJS;
 
@@ -31,6 +34,11 @@ public class DriveSubsystem extends SubsystemBase {
   public static final int backRightCANCoderId = 23;
   public static final int backRightSteerId = 7;
 
+  private final CANCoder frontLeft = new CANCoder(frontLeftCANCoderId);
+  private final CANCoder frontRight = new CANCoder(frontRightCANCoderId);
+  private final CANCoder backLeft = new CANCoder(backLeftCANCoderId);
+  private final CANCoder backRight = new CANCoder(backRightCANCoderId);
+
   private final TalonFX frontLeftPower = new TalonFX(frontLeftDriveId);
   private final TalonFX frontLeftAngle = new TalonFX(frontLeftSteerId);
 
@@ -43,6 +51,15 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX backRightPower = new TalonFX(backRightDriveId);
   private final TalonFX backRightAngle = new TalonFX(backRightSteerId);
 
+  private final double flInit = 0.0;
+  private final double frInit = 0.0;
+  private final double blInit = 0.0;
+  private final double brInit = 0.0;
+
+  private final double range = 10;
+
+  private boolean isCalibrated = false;
+
   public DriveSubsystem(Joystick baseJS) {
     this.m_baseJS = baseJS;
   }
@@ -50,15 +67,14 @@ public class DriveSubsystem extends SubsystemBase {
   public void SwerveDrive() {
     double x = m_baseJS.getRawAxis(0);
     double y = m_baseJS.getRawAxis(1);
-    double z = m_baseJS.getRawAxis(3);
+    double z = m_baseJS.getRawAxis(2);
 
     double FWD = -y;
     double STR = x;
     double RCW = z;
 
-    double temp = -y * Math.cos(0) + x * Math.sin(0);
-
-    STR = y * Math.sin(0) + x * Math.cos(0);
+    double temp = FWD * Math.cos(0) + STR * Math.sin(0);
+    STR = -FWD * Math.sin(0) + STR * Math.cos(0);
     FWD = temp;
 
     double L = RobotContainer.Length;
@@ -71,49 +87,84 @@ public class DriveSubsystem extends SubsystemBase {
     double D = FWD + RCW * (W / R);
 
     double ws1 = Math.sqrt(Math.pow(B, 2) + Math.pow(C, 2));
-    double wa1 = Math.atan2(B, C) * 180 / Math.PI;
+    double wa1 = Math.atan2(B, C) - Math.PI / 4;
 
     double ws2 = Math.sqrt(Math.pow(B, 2) + Math.pow(D, 2));
-    double wa2 = Math.atan2(B, D) * 180 / Math.PI;
+    double wa2 = Math.atan2(B, D) - Math.PI / 4;
 
     double ws3 = Math.sqrt(Math.pow(A, 2) + Math.pow(D, 2));
-    double wa3 = Math.atan2(A, D) * 180 / Math.PI;
+    double wa3 = Math.atan2(A, D) - Math.PI / 4;
 
     double ws4 = Math.sqrt(Math.pow(A, 2) + Math.pow(C, 2));
-    double wa4 = Math.atan2(A, C) * 180 / Math.PI;
+    double wa4 = Math.atan2(A, C) - Math.PI / 4;
 
-    double max = ws1;
+    double maxs = ws1;
+    double maxa = wa1;
 
-    if (ws2 > max) {
-      max = ws2;
+    // normalize the speed
+    if (ws2 > maxs) {
+      maxs = ws2;
     }
 
-    if (ws3 > max) {
-      max = ws3;
+    if (ws3 > maxs) {
+      maxs = ws3;
     }
 
-    if (ws4 > max) {
-      max = ws4;
+    if (ws4 > maxs) {
+      maxs = ws4;
     }
 
-    if (max > 1) {
-      ws1 /= max;
-      ws2 /= max;
-      ws3 /= max;
-      ws4 /= max;
+    if (maxs > 1) {
+      ws1 /= maxs;
+      ws2 /= maxs;
+      ws3 /= maxs;
+      ws4 /= maxs;
     }
 
-    frontRightPower.set(ControlMode.PercentOutput, ws1);
-    frontRightAngle.set(ControlMode.PercentOutput, wa1);
+    SmartDashboard.putNumber("ws1", ws1);
+    SmartDashboard.putNumber("ws2", ws2);
+    SmartDashboard.putNumber("ws3", ws3);
+    SmartDashboard.putNumber("ws4", ws4);
 
-    frontLeftPower.set(ControlMode.PercentOutput, ws2);
-    frontLeftAngle.set(ControlMode.PercentOutput, wa2);
+    frontRightPower.set(MOTOR_OUTPUT, ws1);
+    frontRightAngle.set(MOTOR_OUTPUT, wa1);
 
-    backLeftPower.set(ControlMode.PercentOutput, ws3);
-    backLeftAngle.set(ControlMode.PercentOutput, wa3);
+    frontLeftPower.set(MOTOR_OUTPUT, ws2);
+    frontLeftAngle.set(MOTOR_OUTPUT, wa2);
 
-    backRightPower.set(ControlMode.PercentOutput, ws4);
-    backRightAngle.set(ControlMode.PercentOutput, wa4);
+    backLeftPower.set(MOTOR_OUTPUT, ws3);
+    backLeftAngle.set(MOTOR_OUTPUT, wa3);
+
+    backRightPower.set(MOTOR_OUTPUT, ws4);
+    backRightAngle.set(MOTOR_OUTPUT, wa4);
+  }
+
+  public void Calibrate() {
+    double fl = frontLeft.getAbsolutePosition();
+    double fr = frontRight.getAbsolutePosition();
+
+    double br = backLeft.getAbsolutePosition();
+    double bl = backRight.getAbsolutePosition();
+
+    if (fl <= flInit + range && fl >= flInit - range) {
+      frontLeftAngle.set(MOTOR_OUTPUT, 0.5);
+    }
+
+    if (fr >= frInit + range && fr <= frInit - range) {
+      frontRightAngle.set(MOTOR_OUTPUT, 0.5);
+    }
+
+    if (br >= brInit + range && br <= brInit - range) {
+      backRightAngle.set(MOTOR_OUTPUT, 0.5);
+    }
+
+    if (bl >= blInit + range && bl <= blInit - range) {
+      backLeftAngle.set(MOTOR_OUTPUT, 0.5);
+    }
+  }
+
+  public boolean isCalibrated() {
+    return isCalibrated;
   }
 
   @Override
