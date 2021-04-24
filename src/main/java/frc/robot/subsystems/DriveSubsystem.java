@@ -6,6 +6,8 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
 import edu.wpi.first.wpilibj.Joystick;
@@ -13,6 +15,7 @@ import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
+import frc.robot.modules.Talon;
 
 public class DriveSubsystem extends SubsystemBase {
   private static final ControlMode MOTOR_OUTPUT = ControlMode.PercentOutput;
@@ -20,7 +23,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   /** Creates a new DriveSubsystem. */
   private Joystick m_baseJS;
-  private PIDController pid = new PIDController(1, 0, 0);
+  private PIDController pid = new PIDController(1, 5, 1);
 
   public static final int frontLeftDriveId = 4;
   public static final int frontLeftCANCoderId = 20;
@@ -47,7 +50,8 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX frontLeftAngle = new TalonFX(frontLeftSteerId);
 
   private final TalonFX frontRightPower = new TalonFX(frontRightDriveId);
-  private final TalonFX frontRightAngle = new TalonFX(frontRightSteerId);
+  // private final TalonFX frontRightAngle = new TalonFX(frontRightSteerId);
+  private final Talon frontRightAngle = new Talon(frontRightSteerId, TalonFXInvertType.Clockwise, NeutralMode.Brake);
 
   private final TalonFX backLeftPower = new TalonFX(frontLeftDriveId);
   private final TalonFX backLeftAngle = new TalonFX(backLeftSteerId);
@@ -91,7 +95,7 @@ public class DriveSubsystem extends SubsystemBase {
     double D = FWD + RCW * (W / R);
 
     double ws1 = Math.sqrt(Math.pow(B, 2) + Math.pow(C, 2));
-    double wa1 = Math.atan2(B, C) - Math.PI / 4;
+    double wa1 = (180 / Math.PI) * Math.atan2(B, C) + 180;
 
     double ws2 = Math.sqrt(Math.pow(B, 2) + Math.pow(D, 2));
     double wa2 = Math.atan2(B, D) - Math.PI / 4;
@@ -125,39 +129,46 @@ public class DriveSubsystem extends SubsystemBase {
       ws4 /= maxs;
     }
 
-    double frontAnglePower = pid.calculate(frontRight.getPosition(), 1000);
+    double frontAnglePower = pid.calculate(frontRight.getPosition(), 500);
 
     SmartDashboard.putNumber("ws1", ws1);
     SmartDashboard.putNumber("ws2", ws2);
     SmartDashboard.putNumber("ws3", ws3);
     SmartDashboard.putNumber("ws4", ws4);
 
+    SmartDashboard.putNumber("wa1", wa1);
+
     SmartDashboard.putNumber("pid wa1", frontAnglePower);
+    SmartDashboard.putNumber("error", pid.getPositionError());
+    SmartDashboard.putNumber("getPos", frontRight.getPosition());
 
-    frontRightPower.set(MOTOR_OUTPUT, ws1);
-    frontRightAngle.set(MOTOR_OUTPUT, frontAnglePower);
+    // frontRightPower.set(MOTOR_OUTPUT, ws1);
+    // frontRightAngle.set(MOTOR_OUTPUT, wa1);
 
-    frontLeftPower.set(MOTOR_OUTPUT, ws2);
-    frontLeftAngle.set(MOTOR_OUTPUT, wa2);
+    frontRightAngle.setPosition(10);
 
-    backLeftPower.set(MOTOR_OUTPUT, ws3);
-    backLeftAngle.set(MOTOR_OUTPUT, wa3);
+    // frontLeftPower.set(MOTOR_OUTPUT, ws2);
+    // frontLeftAngle.set(MOTOR_OUTPUT, wa2);
 
-    backRightPower.set(MOTOR_OUTPUT, ws4);
-    backRightAngle.set(MOTOR_OUTPUT, wa4);
+    // backLeftPower.set(MOTOR_OUTPUT, ws3);
+    // backLeftAngle.set(MOTOR_OUTPUT, wa3);
+
+    // backRightPower.set(MOTOR_OUTPUT, ws4);
+    // backRightAngle.set(MOTOR_OUTPUT, wa4);
   }
 
   public void Calibrate() {
     double position = 180 * (2048 / 360);
 
     double frontL = pid.calculate(frontLeftAngle.getSelectedSensorPosition(), position);
-    double frontR = pid.calculate(frontRightAngle.getSelectedSensorPosition(), position);
+    // double frontR = pid.calculate(frontRightAngle.getSelectedSensorPosition(),
+    // position);
     double backL = pid.calculate(backLeftAngle.getSelectedSensorPosition(), position);
     double backR = pid.calculate(backRightAngle.getSelectedSensorPosition(), position);
 
     frontLeftAngle.set(MOTOR_OUTPUT, frontL);
 
-    frontRightAngle.set(MOTOR_OUTPUT, frontR);
+    // frontRightAngle.set(MOTOR_OUTPUT, frontR);
 
     backRightAngle.set(MOTOR_OUTPUT, backR);
 
