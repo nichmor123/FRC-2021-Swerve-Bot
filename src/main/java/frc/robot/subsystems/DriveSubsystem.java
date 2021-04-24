@@ -5,18 +5,22 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
 
 public class DriveSubsystem extends SubsystemBase {
   private static final ControlMode MOTOR_OUTPUT = ControlMode.PercentOutput;
+  private static final ControlMode MOTOR_POSITION = ControlMode.Position;
 
   /** Creates a new DriveSubsystem. */
   private Joystick m_baseJS;
+  private PIDController pid = new PIDController(1, 0, 0);
 
   public static final int frontLeftDriveId = 4;
   public static final int frontLeftCANCoderId = 20;
@@ -24,7 +28,7 @@ public class DriveSubsystem extends SubsystemBase {
   // put your can Id's here!
   public static final int frontRightDriveId = 8;
   public static final int frontRightCANCoderId = 21;
-  public static final int frontRightSteerId = 6;
+  public static final int frontRightSteerId = 5;
   // put your can Id's here!
   public static final int backLeftDriveId = 9;
   public static final int backLeftCANCoderId = 22;
@@ -121,13 +125,17 @@ public class DriveSubsystem extends SubsystemBase {
       ws4 /= maxs;
     }
 
+    double frontAnglePower = pid.calculate(frontRight.getPosition(), 1000);
+
     SmartDashboard.putNumber("ws1", ws1);
     SmartDashboard.putNumber("ws2", ws2);
     SmartDashboard.putNumber("ws3", ws3);
     SmartDashboard.putNumber("ws4", ws4);
 
+    SmartDashboard.putNumber("pid wa1", frontAnglePower);
+
     frontRightPower.set(MOTOR_OUTPUT, ws1);
-    frontRightAngle.set(MOTOR_OUTPUT, wa1);
+    frontRightAngle.set(MOTOR_OUTPUT, frontAnglePower);
 
     frontLeftPower.set(MOTOR_OUTPUT, ws2);
     frontLeftAngle.set(MOTOR_OUTPUT, wa2);
@@ -140,27 +148,20 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void Calibrate() {
-    double fl = frontLeft.getAbsolutePosition();
-    double fr = frontRight.getAbsolutePosition();
+    double position = 180 * (2048 / 360);
 
-    double br = backLeft.getAbsolutePosition();
-    double bl = backRight.getAbsolutePosition();
+    double frontL = pid.calculate(frontLeftAngle.getSelectedSensorPosition(), position);
+    double frontR = pid.calculate(frontRightAngle.getSelectedSensorPosition(), position);
+    double backL = pid.calculate(backLeftAngle.getSelectedSensorPosition(), position);
+    double backR = pid.calculate(backRightAngle.getSelectedSensorPosition(), position);
 
-    if (fl <= flInit + range && fl >= flInit - range) {
-      frontLeftAngle.set(MOTOR_OUTPUT, 0.5);
-    }
+    frontLeftAngle.set(MOTOR_OUTPUT, frontL);
 
-    if (fr >= frInit + range && fr <= frInit - range) {
-      frontRightAngle.set(MOTOR_OUTPUT, 0.5);
-    }
+    frontRightAngle.set(MOTOR_OUTPUT, frontR);
 
-    if (br >= brInit + range && br <= brInit - range) {
-      backRightAngle.set(MOTOR_OUTPUT, 0.5);
-    }
+    backRightAngle.set(MOTOR_OUTPUT, backR);
 
-    if (bl >= blInit + range && bl <= blInit - range) {
-      backLeftAngle.set(MOTOR_OUTPUT, 0.5);
-    }
+    backLeftAngle.set(MOTOR_OUTPUT, backL);
   }
 
   public boolean isCalibrated() {

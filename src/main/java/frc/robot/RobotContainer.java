@@ -5,10 +5,8 @@
 package frc.robot;
 
 import frc.robot.commands.NewSwerve;
-import frc.robot.commands.SwerveDriveCommand;
 import edu.wpi.first.wpilibj.Joystick;
 import frc.robot.subsystems.DriveSubsystem;
-import frc.robot.subsystems.SwerveDrivetrain;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -25,16 +23,15 @@ public class RobotContainer {
 
   private final Joystick controller = new Joystick(0);
 
-  // private final DriveSubsystem m_driveSubsystem = new
-  // DriveSubsystem(controller);
+  private final DriveSubsystem m_driveSubsystem = new DriveSubsystem(controller);
 
-  private final SwerveDrivetrain drivetrain = new SwerveDrivetrain();
+  // private final SwerveDrivetrain drivetrain = new SwerveDrivetrain();
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
-    drivetrain.setDefaultCommand(new SwerveDriveCommand(drivetrain, controller));
-    // m_driveSubsystem.setDefaultCommand(new NewSwerve(m_driveSubsystem));
+    // drivetrain.setDefaultCommand(new SwerveDriveCommand(drivetrain, controller));
+    m_driveSubsystem.setDefaultCommand(new NewSwerve(m_driveSubsystem));
   }
 }
