@@ -7,6 +7,27 @@ package frc.robot;
 /** Add your docs here. */
 public class Constants {
   /**
+   * Which PID slot to pull gains from. Starting 2018, you can choose from 0,1,2
+   * or 3. Only the first two (0,1) are visible in web-based configuration.
+   */
+  public static final int kSlotIdx = 0;
+
+  /**
+   * Talon FX supports multiple (cascaded) PID loops. For now we just want the
+   * primary one.
+   */
+  public static final int kPIDLoopIdx = 0;
+
+  /* Choose so that Talon does not report sensor out of phase */
+  public static boolean kSensorPhase = true;
+
+  /**
+   * Choose based on what direction you want to be positive, this does not affect
+   * motor invert.
+   */
+  public static boolean kMotorInvert = false;
+
+  /**
    * Number of joystick buttons to poll. 10 means buttons[1,9] are polled, which
    * is actually 9 buttons.
    */
@@ -36,6 +57,14 @@ public class Constants {
   public final static double kNeutralDeadband = 0.001;
 
   /**
+   * Empirically measure what the difference between encoders per 360' Drive the
+   * robot in clockwise rotations and measure the units per rotation. Drive the
+   * robot in counter clockwise rotations and measure the units per rotation. Take
+   * the average of the two.
+   */
+  public final static int kEncoderUnitsPerRotation = 2048;
+
+  /**
    * PID Gains may have to be adjusted based on the responsiveness of control
    * loop. kF: 1023 represents output value to Talon at 100%, 6800 represents
    * Velocity units at 100% output Not all set of Gains are used in this project
@@ -47,6 +76,12 @@ public class Constants {
   public final static Gains kGains_Turning = new Gains(2.0, 0.0, 4.0, 0.0, 200, 1.00);
   public final static Gains kGains_Velocit = new Gains(0.1, 0.0, 20.0, 1023.0 / 6800.0, 300, 0.50);
   public final static Gains kGains_MotProf = new Gains(1.0, 0.0, 0.0, 1023.0 / 6800.0, 400, 1.00);
+
+  /**
+   * Gains used in Positon Closed Loop, to be adjusted accordingly Gains(kp, ki,
+   * kd, kf, izone, peak output);
+   */
+  public static final Gains kGains = new Gains(0.15, 0.0, 1.0, 0.0, 0, 1.0);
 
   /** ---- Flat constants, you should not need to change these ---- */
   /*

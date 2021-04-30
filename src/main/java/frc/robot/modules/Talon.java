@@ -4,11 +4,7 @@
 
 package frc.robot.modules;
 
-import javax.annotation.Nullable;
-
-import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.RemoteSensorSource;
 import com.ctre.phoenix.motorcontrol.StatusFrame;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
@@ -16,11 +12,13 @@ import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
-/** Add your docs here. */
+/** Pink Team TalonFX FRC Wrapper */
 public class Talon extends TalonFX {
   private TalonFXConfiguration config = new TalonFXConfiguration();
+  private int id;
 
   // remove if not needed
   private TalonFXInvertType invert = TalonFXInvertType.Clockwise;
@@ -34,58 +32,23 @@ public class Talon extends TalonFX {
    * @param _invert
    * @param _neutralMode
    */
-  public Talon(int id, TalonFXInvertType _invert, NeutralMode _neutralMode) {
-    super(id);
+  public Talon(int _id, TalonFXInvertType _invert, NeutralMode _neutralMode) {
+    super(_id);
 
-    this.setNeutralMode(_neutralMode);
+    this.configFactoryDefault();
 
-    this.invert = _invert;
-    this.currentNeutralMode = _neutralMode;
+    /* Config the sensor used for Primary PID and sensor direction */
+    this.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, Constants.kPIDLoopIdx,
+        Constants.kTimeoutMs);
 
-    this.config.primaryPID.selectedFeedbackSensor = TalonFXFeedbackDevice.IntegratedSensor.toFeedbackDevice();
-
-    /*
-     * Configure the Remote Talon's selected sensor as a remote sensor for the right
-     * Talon
-     * 
-     * ALSO: this might need to be removed if its not useful
-     */
-    this.config.remoteFilter0.remoteSensorDeviceID = this.getDeviceID();
-    this.config.remoteFilter0.remoteSensorSource = RemoteSensorSource.TalonFX_SelectedSensor;
+    /* Ensure sensor is positive when output is positive */
+    this.setSensorPhase(Constants.kSensorPhase);
 
     /**
-     * Max out the peak output (for all modes). However you can limit the output of
-     * a given PID object with configClosedLoopPeakOutput().
+     * Set based on what direction you want forward/positive to be. This does not
+     * affect sensor phase.
      */
-    this.config.peakOutputForward = +1.0;
-    this.config.peakOutputReverse = -1.0;
-
-    /* FPID Gains for distance servo */
-    this.config.slot0.kP = Constants.kGains_Distanc.kP;
-    this.config.slot0.kI = Constants.kGains_Distanc.kI;
-    this.config.slot0.kD = Constants.kGains_Distanc.kD;
-    this.config.slot0.kF = Constants.kGains_Distanc.kF;
-    this.config.slot0.integralZone = Constants.kGains_Distanc.kIzone;
-    this.config.slot0.closedLoopPeakOutput = Constants.kGains_Distanc.kPeakOutput;
-    this.config.slot0.allowableClosedloopError = 0;
-
-    /**
-     * 1ms per loop. PID loop can be slowed down if need be. For example, - if
-     * sensor updates are too slow - sensor deltas are very small per update, so
-     * derivative error never gets large enough to be useful. - sensor movement is
-     * very slow causing the derivative error to be near zero.
-     */
-    int closedLoopTimeMs = 1;
-    this.config.slot0.closedLoopPeriod = closedLoopTimeMs;
-    this.config.slot1.closedLoopPeriod = closedLoopTimeMs;
-    this.config.slot2.closedLoopPeriod = closedLoopTimeMs;
-    this.config.slot3.closedLoopPeriod = closedLoopTimeMs;
-
-    this.configAllSettings(config);
-
-    /* Configure output and sensor direction */
-    this.setInverted(invert);
-
+    this.setInverted(Constants.kMotorInvert);
     /*
      * Talon FX does not need sensor phase set for its integrated sensor This is
      * because it will always be correct if the selected feedback device is
@@ -95,8 +58,25 @@ public class Talon extends TalonFX {
      * https://phoenix-documentation.readthedocs.io/en/latest/ch14_MCSensor.html#
      * sensor-phase
      */
-    // _leftMaster.setSensorPhase(true);
-    // _rightMaster.setSensorPhase(true);
+    // this.setSensorPhase(true);
+
+    /* Config the peak and nominal outputs, 12V means full */
+    this.configNominalOutputForward(0, Constants.kTimeoutMs);
+    this.configNominalOutputReverse(0, Constants.kTimeoutMs);
+    this.configPeakOutputForward(1, Constants.kTimeoutMs);
+    this.configPeakOutputReverse(-1, Constants.kTimeoutMs);
+
+    /**
+     * Config the allowable closed-loop error, Closed-Loop output will be neutral
+     * within this range. See Table in Section 17.2.1 for native units per rotation.
+     */
+    this.configAllowableClosedloopError(0, Constants.kPIDLoopIdx, Constants.kTimeoutMs);
+
+    /* Config Position Closed Loop gains in slot0, tsypically kF stays zero. */
+    this.config_kF(Constants.kPIDLoopIdx, Constants.kGains.kF, Constants.kTimeoutMs);
+    this.config_kP(Constants.kPIDLoopIdx, Constants.kGains.kP, Constants.kTimeoutMs);
+    this.config_kI(Constants.kPIDLoopIdx, Constants.kGains.kI, Constants.kTimeoutMs);
+    this.config_kD(Constants.kPIDLoopIdx, Constants.kGains.kD, Constants.kTimeoutMs);
 
     /* Set status frame periods to ensure we don't have stale data */
     this.setStatusFramePeriod(StatusFrame.Status_12_Feedback1, 20, Constants.kTimeoutMs);
@@ -106,15 +86,92 @@ public class Talon extends TalonFX {
   }
 
   public void setPosition(double position) {
-    double target_sensorUnits = position * Constants.kSensorUnitsPerRotation * Constants.kRotationsToTravel;
-    double forwd = position * 0.10;
+    // double target_sensorUnits = position * Constants.kSensorUnitsPerRotation *
+    // Constants.kRotationsToTravel;
+    // double forwd = position * 0.10;
 
-    this.set(TalonFXControlMode.Position, target_sensorUnits, DemandType.ArbitraryFeedForward, forwd);
+    // fix the unit conversion issue
+    double targetPositionRotations = position * ((10 * 2612) / 180);
+    this.set(TalonFXControlMode.Position, targetPositionRotations);
+
+    SmartDashboard.putNumber("targetPositionRotations", targetPositionRotations);
+  }
+
+  /**
+   * Determines if SensorSum or SensorDiff should be used for combining left/right
+   * sensors into Robot Distance.
+   * 
+   * Assumes Aux Position is set as Remote Sensor 0.
+   * 
+   * configAllSettings must still be called on the master config after this
+   * function modifies the config values.
+   * 
+   * @param masterInvertType Invert of the Master Talon
+   * @param masterConfig     Configuration object to fill
+   */
+  void setRobotDistanceConfigs(TalonFXInvertType masterInvertType, TalonFXConfiguration masterConfig) {
+    /**
+     * Determine if we need a Sum or Difference.
+     * 
+     * The auxiliary Talon FX will always be positive in the forward direction
+     * because it's a selected sensor over the CAN bus.
+     * 
+     * The master's native integrated sensor may not always be positive when forward
+     * because sensor phase is only applied to *Selected Sensors*, not native sensor
+     * sources. And we need the native to be combined with the aux (other side's)
+     * distance into a single robot distance.
+     */
+
+    /*
+     * THIS FUNCTION should not need to be modified. This setup will work regardless
+     * of whether the master is on the Right or Left side since it only deals with
+     * distance magnitude.
+     */
+
+    /* Check if we're inverted */
+    if (masterInvertType == TalonFXInvertType.Clockwise) {
+      /*
+       * If master is inverted, that means the integrated sensor will be negative in
+       * the forward direction. If master is inverted, the final sum/diff result will
+       * also be inverted. This is how Talon FX corrects the sensor phase when
+       * inverting the motor direction. This inversion applies to the *Selected
+       * Sensor*, not the native value. Will a sensor sum or difference give us a
+       * positive total magnitude? Remember the Master is one side of your drivetrain
+       * distance and Auxiliary is the other side's distance. Phase | Term 0 | Term 1
+       * | Result Sum: -1 *((-)Master + (+)Aux )| NOT OK, will cancel each other out
+       * Diff: -1 *((-)Master - (+)Aux )| OK - This is what we want, magnitude will be
+       * correct and positive. Diff: -1 *((+)Aux - (-)Master)| NOT OK, magnitude will
+       * be correct but negative
+       */
+
+      this.config.diff0Term = TalonFXFeedbackDevice.IntegratedSensor.toFeedbackDevice(); // Local Integrated Sensor
+      this.config.diff1Term = TalonFXFeedbackDevice.RemoteSensor0.toFeedbackDevice(); // Aux Selected Sensor
+      this.config.primaryPID.selectedFeedbackSensor = TalonFXFeedbackDevice.SensorDifference.toFeedbackDevice(); // Diff0
+                                                                                                                 // -
+                                                                                                                 // Diff1
+    } else {
+      /* Master is not inverted, both sides are positive so we can sum them. */
+      this.config.sum0Term = TalonFXFeedbackDevice.RemoteSensor0.toFeedbackDevice(); // Aux Selected Sensor
+      this.config.sum1Term = TalonFXFeedbackDevice.IntegratedSensor.toFeedbackDevice(); // Local IntegratedSensor
+      this.config.primaryPID.selectedFeedbackSensor = TalonFXFeedbackDevice.SensorSum.toFeedbackDevice(); // Sum0 +
+                                                                                                          // Sum1
+    }
+
+    /*
+     * Since the Distance is the sum of the two sides, divide by 2 so the total
+     * isn't double the real-world value
+     */
+    this.config.primaryPID.selectedFeedbackCoefficient = 0.5;
   }
 
   public void Reconfigure(TalonFXConfiguration _config) {
     this.config = _config;
 
     this.configAllSettings(_config);
+  }
+
+  public void Zero() {
+    this.getSensorCollection().setIntegratedSensorPosition(0, Constants.kTimeoutMs);
+    System.out.println("Encoders Zeroed for motor " + this.id);
   }
 }
