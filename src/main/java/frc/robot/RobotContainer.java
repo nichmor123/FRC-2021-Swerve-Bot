@@ -5,7 +5,9 @@
 package frc.robot;
 
 import frc.robot.commands.NewSwerve;
+import frc.robot.commands.Zero;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.subsystems.DriveSubsystem;
 
 /**
@@ -33,5 +35,9 @@ public class RobotContainer {
   public RobotContainer() {
     // drivetrain.setDefaultCommand(new SwerveDriveCommand(drivetrain, controller));
     m_driveSubsystem.setDefaultCommand(new NewSwerve(m_driveSubsystem));
+
+    // this will zero all the motors when button A is pressed
+    // new JoystickButton(this.controller, 0).whenPressed(new
+    // Zero(m_driveSubsystem));
   }
 }

@@ -13,7 +13,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
+import frc.robot.Gains;
 
 /** Pink Team TalonFX FRC Wrapper */
 public class Talon extends TalonFX {
@@ -23,6 +23,12 @@ public class Talon extends TalonFX {
   // remove if not needed
   private TalonFXInvertType invert = TalonFXInvertType.Clockwise;
   private NeutralMode currentNeutralMode = NeutralMode.Brake;
+
+  private PositionType currentPositionType = PositionType.HALF;
+
+  private enum PositionType {
+    HALF, FULL
+  }
 
   /**
    * for driving here is the position snippet
@@ -85,13 +91,17 @@ public class Talon extends TalonFX {
     this.setStatusFramePeriod(StatusFrame.Status_10_Targets, 20, Constants.kTimeoutMs);
   }
 
-  public void setPosition(double position) {
-    // double target_sensorUnits = position * Constants.kSensorUnitsPerRotation *
-    // Constants.kRotationsToTravel;
-    // double forwd = position * 0.10;
+  public void setPosition(double _position, PositionType _type) {
+    double unit = 180;
+
+    SetPositionType(_type);
+
+    if (this.currentPositionType == PositionType.FULL) {
+      unit = 360;
+    }
 
     // fix the unit conversion issue
-    double targetPositionRotations = position * ((10 * 2612) / 180);
+    double targetPositionRotations = _position * (26220 / unit); // the base value is 26120
     this.set(TalonFXControlMode.Position, targetPositionRotations);
 
     SmartDashboard.putNumber("targetPositionRotations", targetPositionRotations);
@@ -170,8 +180,121 @@ public class Talon extends TalonFX {
     this.configAllSettings(_config);
   }
 
+  public void SetPositionType(PositionType _type) {
+    this.currentPositionType = _type;
+  }
+
+  public PositionType GetPositionType() {
+    return this.currentPositionType;
+  }
+
   public void Zero() {
     this.getSensorCollection().setIntegratedSensorPosition(0, Constants.kTimeoutMs);
     System.out.println("Encoders Zeroed for motor " + this.id);
   }
+}
+
+class Constants {
+  /**
+   * Which PID slot to pull gains from. Starting 2018, you can choose from 0,1,2
+   * or 3. Only the first two (0,1) are visible in web-based configuration.
+   */
+  public static final int kSlotIdx = 0;
+
+  /**
+   * Talon FX supports multiple (cascaded) PID loops. For now we just want the
+   * primary one.
+   */
+  public static final int kPIDLoopIdx = 0;
+
+  /* Choose so that Talon does not report sensor out of phase */
+  public static boolean kSensorPhase = true;
+
+  /**
+   * Choose based on what direction you want to be positive, this does not affect
+   * motor invert.
+   */
+  public static boolean kMotorInvert = false;
+
+  /**
+   * Number of joystick buttons to poll. 10 means buttons[1,9] are polled, which
+   * is actually 9 buttons.
+   */
+  public final static int kNumButtonsPlusOne = 10;
+
+  /**
+   * How many sensor units per rotation. Using Talon FX Integrated Sensor.
+   * 
+   * @link https://github.com/CrossTheRoadElec/Phoenix-Documentation#what-are-the-units-of-my-sensor
+   */
+  public final static int kSensorUnitsPerRotation = 2048;
+
+  /**
+   * Number of rotations to drive when performing Distance Closed Loop
+   */
+  public final static double kRotationsToTravel = 6;
+
+  /**
+   * Set to zero to skip waiting for confirmation. Set to nonzero to wait and
+   * report to DS if action fails.
+   */
+  public final static int kTimeoutMs = 30;
+
+  /**
+   * Motor neutral dead-band, set to the minimum 0.1%.
+   */
+  public final static double kNeutralDeadband = 0.001;
+
+  /**
+   * Empirically measure what the difference between encoders per 360' Drive the
+   * robot in clockwise rotations and measure the units per rotation. Drive the
+   * robot in counter clockwise rotations and measure the units per rotation. Take
+   * the average of the two.
+   */
+  public final static int kEncoderUnitsPerRotation = 2048;
+
+  /**
+   * PID Gains may have to be adjusted based on the responsiveness of control
+   * loop. kF: 1023 represents output value to Talon at 100%, 6800 represents
+   * Velocity units at 100% output Not all set of Gains are used in this project
+   * and may be removed as desired.
+   * 
+   * kP kI kD kF Iz PeakOut
+   */
+  public final static Gains kGains_Distanc = new Gains(0.1, 0.0, 0.0, 0.0, 100, 0.50);
+  public final static Gains kGains_Turning = new Gains(2.0, 0.0, 4.0, 0.0, 200, 1.00);
+  public final static Gains kGains_Velocit = new Gains(0.1, 0.0, 20.0, 1023.0 / 6800.0, 300, 0.50);
+  public final static Gains kGains_MotProf = new Gains(1.0, 0.0, 0.0, 1023.0 / 6800.0, 400, 1.00);
+
+  /**
+   * Gains used in Positon Closed Loop, to be adjusted accordingly Gains(kp, ki,
+   * kd, kf, izone, peak output);
+   */
+  public static final Gains kGains = new Gains(0.15, 0.0, 1.0, 0.0, 0, 1.0);
+
+  /** ---- Flat constants, you should not need to change these ---- */
+  /*
+   * We allow either a 0 or 1 when selecting an ordinal for remote devices [You
+   * can have up to 2 devices assigned remotely to a talon/victor]
+   */
+  public final static int REMOTE_0 = 0;
+  public final static int REMOTE_1 = 1;
+  /*
+   * We allow either a 0 or 1 when selecting a PID Index, where 0 is primary and 1
+   * is auxiliary
+   */
+  public final static int PID_PRIMARY = 0;
+  public final static int PID_TURN = 1;
+  /*
+   * Firmware currently supports slots [0, 3] and can be used for either PID Set
+   */
+  public final static int SLOT_0 = 0;
+  public final static int SLOT_1 = 1;
+  public final static int SLOT_2 = 2;
+  public final static int SLOT_3 = 3;
+  /* ---- Named slots, used to clarify code ---- */
+  public final static int kSlot_Distanc = SLOT_0;
+  public final static int kSlot_Turning = SLOT_1;
+  public final static int kSlot_Velocit = SLOT_2;
+  public final static int kSlot_MotProf = SLOT_3;
 }

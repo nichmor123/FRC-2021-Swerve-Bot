@@ -7,15 +7,15 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.DriveSubsystem;
 
-public class NewSwerve extends CommandBase {
-  /** Creates a new NewSwerve. */
+public class Zero extends CommandBase {
   private DriveSubsystem m_drive;
 
-  public NewSwerve(DriveSubsystem drive) {
+  /** Creates a new Zero. */
+  public Zero(DriveSubsystem _m_drive) {
     // Use addRequirements() here to declare subsystem dependencies.
-    this.m_drive = drive;
 
-    addRequirements(m_drive);
+    this.m_drive = _m_drive;
+    addRequirements(this.m_drive);
   }
 
   // Called when the command is initially scheduled.
@@ -26,7 +26,8 @@ public class NewSwerve extends CommandBase {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    m_drive.SwerveDrive();
+    // Zero All the Angle Motors
+    m_drive.ZeroAll();
   }
 
   // Called once the command ends or is interrupted.
