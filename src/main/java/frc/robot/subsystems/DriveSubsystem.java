@@ -68,7 +68,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     // the -x is to invert the x axis
     double FWD = -y;
-    double STR = x;
+    double STR = -x;
     double RCW = z;
 
     double temp = FWD * Math.cos(0) + STR * Math.sin(0);

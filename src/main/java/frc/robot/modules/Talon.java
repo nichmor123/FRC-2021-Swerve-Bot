@@ -94,17 +94,13 @@ public class Talon extends TalonFX {
   }
 
   public void setPosition(double _position) {
-    double unit = 180;
+    double unit = 360;
+
+    // the base value is 26120, 26220
     double perRot = 26120;
 
-    // if (this.currentPositionType == PositionType.FULL) {
-    // unit = 360;
-    // }
-
-    // SetPositionType(_type);
-
     // fix the unit conversion issue
-    double targetPositionRotations = _position * (perRot / unit); // the base value is 26120, 26220
+    double targetPositionRotations = _position * (perRot / unit); // this resolves to 72.5 ticks per degree
     this.set(TalonFXControlMode.Position, targetPositionRotations);
 
     SmartDashboard.putNumber("targetPositionRotations", targetPositionRotations);
