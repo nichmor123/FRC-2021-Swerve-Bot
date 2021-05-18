@@ -21,21 +21,21 @@ public class DriveSubsystem extends SubsystemBase {
   /** Creates a new DriveSubsystem. */
   private Joystick m_baseJS;
 
-  public static final int frontLeftDriveId = 4;
-  public static final int frontLeftCANCoderId = 20;
-  public static final int frontLeftSteerId = 6;
+  public static final int frontLeftDriveId = 3;
+  public static final int frontLeftCANCoderId = 23;
+  public static final int frontLeftSteerId = 7;
   // put your can Id's here!
   public static final int frontRightDriveId = 8;
   public static final int frontRightCANCoderId = 21;
   public static final int frontRightSteerId = 5;
   // put your can Id's here!
-  public static final int backLeftDriveId = 9;
+  public static final int backLeftDriveId = 00;
   public static final int backLeftCANCoderId = 22;
   public static final int backLeftSteerId = 2;
 
-  public static final int backRightDriveId = 3;
-  public static final int backRightCANCoderId = 23;
-  public static final int backRightSteerId = 7;
+  public static final int backRightDriveId = 4;
+  public static final int backRightCANCoderId = 20;
+  public static final int backRightSteerId = 6;
 
   private final CANCoder frontRight = new CANCoder(frontRightCANCoderId);
   private final CANCoder frontLeft = new CANCoder(frontLeftCANCoderId);
@@ -48,8 +48,9 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX frontRightPower = new TalonFX(frontRightDriveId);
   private final Talon frontRightAngle = new Talon(frontRightSteerId, TalonFXInvertType.Clockwise, NeutralMode.Brake);
 
-  private final TalonFX backLeftPower = new TalonFX(backLeftDriveId);
-  private final Talon backLeftAngle = new Talon(backLeftSteerId, TalonFXInvertType.Clockwise, NeutralMode.Brake);
+  // private final TalonFX backLeftPower = new TalonFX(backLeftDriveId);
+  // private final Talon backLeftAngle = new Talon(backLeftSteerId,
+  // TalonFXInvertType.Clockwise, NeutralMode.Brake);
 
   private final TalonFX backRightPower = new TalonFX(backRightDriveId);
   private final Talon backRightAngle = new Talon(backRightSteerId, TalonFXInvertType.Clockwise, NeutralMode.Brake);
@@ -66,7 +67,7 @@ public class DriveSubsystem extends SubsystemBase {
     double z = m_baseJS.getRawAxis(4);
 
     // the -x is to invert the x axis
-    double FWD = y;
+    double FWD = -y;
     double STR = x;
     double RCW = z;
 
@@ -120,13 +121,13 @@ public class DriveSubsystem extends SubsystemBase {
       ws4 /= max;
     }
 
-    if (wa2 > 50 && wa2 < 45) {
-      wa2 = wa2 * 1.0;
-    }
+    // if (wa2 > 50 && wa2 < 45) {
+    // wa2 = wa2 * 1.0;
+    // }
 
-    if (wa3 > 50 && wa3 < 45) {
-      wa3 = wa3 * 1.0;
-    }
+    // if (wa3 > 50 && wa3 < 45) {
+    // wa3 = wa3 * 1.0;
+    // }
 
     SmartDashboard.putNumber("wa1", wa1);
     SmartDashboard.putNumber("wa2", wa2);
@@ -142,28 +143,33 @@ public class DriveSubsystem extends SubsystemBase {
 
     // angle motors
 
-    // frontRightAngle.setPosition(wa1);
-    // frontLeftAngle.setPosition(wa2);
+    frontRightAngle.setPosition(wa1);
+    frontLeftAngle.setPosition(wa2);
 
     // backLeftAngle.setPosition(wa3);
-    // backRightAngle.setPosition(wa4);
+    backRightAngle.setPosition(wa4);
 
     SmartDashboard.putNumber("right front cancoder", frontRight.getPosition());
 
     // movement motors
 
-    // frontRightPower.set(MOTOR_OUTPUT, ws1);
-    // frontLeftPower.set(MOTOR_OUTPUT, ws2);
+    frontRightPower.set(MOTOR_OUTPUT, ws1);
+    frontLeftPower.set(MOTOR_OUTPUT, ws2);
 
     // backLeftPower.set(MOTOR_OUTPUT, ws3);
-    // backRightPower.set(MOTOR_OUTPUT, ws4);
+    backRightPower.set(MOTOR_OUTPUT, ws4);
   }
 
   public void ZeroAll() {
-    this.backLeftAngle.Zero();
+    // this.backLeftAngle.Zero();
     this.backRightAngle.Zero();
     this.frontLeftAngle.Zero();
     this.frontRightAngle.Zero();
+
+    this.frontLeft.setPosition(0);
+    this.frontRight.setPosition(0);
+    this.backLeft.setPosition(0);
+    this.backRight.setPosition(0);
   }
 
   public void Calibrate() {

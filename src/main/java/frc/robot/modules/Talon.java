@@ -4,6 +4,8 @@
 
 package frc.robot.modules;
 
+import javax.annotation.Nullable;
+
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatusFrame;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
@@ -26,7 +28,7 @@ public class Talon extends TalonFX {
 
   private PositionType currentPositionType = PositionType.HALF;
 
-  private enum PositionType {
+  public static enum PositionType {
     HALF, FULL
   }
 
@@ -91,17 +93,18 @@ public class Talon extends TalonFX {
     this.setStatusFramePeriod(StatusFrame.Status_10_Targets, 20, Constants.kTimeoutMs);
   }
 
-  public void setPosition(double _position, PositionType _type) {
+  public void setPosition(double _position) {
     double unit = 180;
+    double perRot = 26120;
 
-    SetPositionType(_type);
+    // if (this.currentPositionType == PositionType.FULL) {
+    // unit = 360;
+    // }
 
-    if (this.currentPositionType == PositionType.FULL) {
-      unit = 360;
-    }
+    // SetPositionType(_type);
 
     // fix the unit conversion issue
-    double targetPositionRotations = _position * (26220 / unit); // the base value is 26120
+    double targetPositionRotations = _position * (perRot / unit); // the base value is 26120, 26220
     this.set(TalonFXControlMode.Position, targetPositionRotations);
 
     SmartDashboard.putNumber("targetPositionRotations", targetPositionRotations);
