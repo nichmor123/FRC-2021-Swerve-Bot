@@ -12,6 +12,7 @@ import com.ctre.phoenix.sensors.CANCoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
 import frc.robot.RobotContainer;
 import frc.robot.modules.Talon;
 
@@ -26,11 +27,11 @@ public class DriveSubsystem extends SubsystemBase {
   public static final int frontLeftSteerId = 7;
   // put your can Id's here!
   public static final int frontRightDriveId = 8;
-  public static final int frontRightCANCoderId = 21;
+  public static final int frontRightCANCoderId = 20;
   public static final int frontRightSteerId = 5;
   // put your can Id's here!
-  public static final int backLeftDriveId = 00;
-  public static final int backLeftCANCoderId = 22;
+  public static final int backLeftDriveId = 9;
+  public static final int backLeftCANCoderId = 21;
   public static final int backLeftSteerId = 2;
 
   public static final int backRightDriveId = 4;
@@ -48,9 +49,8 @@ public class DriveSubsystem extends SubsystemBase {
   private final TalonFX frontRightPower = new TalonFX(frontRightDriveId);
   private final Talon frontRightAngle = new Talon(frontRightSteerId, TalonFXInvertType.Clockwise, NeutralMode.Brake);
 
-  // private final TalonFX backLeftPower = new TalonFX(backLeftDriveId);
-  // private final Talon backLeftAngle = new Talon(backLeftSteerId,
-  // TalonFXInvertType.Clockwise, NeutralMode.Brake);
+  private final TalonFX backLeftPower = new TalonFX(backLeftDriveId);
+  private final Talon backLeftAngle = new Talon(backLeftSteerId, TalonFXInvertType.Clockwise, NeutralMode.Brake);
 
   private final TalonFX backRightPower = new TalonFX(backRightDriveId);
   private final Talon backRightAngle = new Talon(backRightSteerId, TalonFXInvertType.Clockwise, NeutralMode.Brake);
@@ -113,7 +113,7 @@ public class DriveSubsystem extends SubsystemBase {
       max = ws4;
     }
 
-    // this is the sensitivity BE CAREFULL WHEN CHANGING THIS
+    // BE CAREFULL WHEN CHANGING THIS, KEEP IT AT ONE ALWAYS
     if (max > 1) {
       ws1 /= max;
       ws2 /= max;
@@ -121,13 +121,59 @@ public class DriveSubsystem extends SubsystemBase {
       ws4 /= max;
     }
 
-    // if (wa2 > 50 && wa2 < 45) {
-    // wa2 = wa2 * 1.0;
-    // }
+    // wa1, wa2, -37, -137
+    if (wa1 < -20 && wa1 > 39) {
+      ws1 = ws1 * -1.0;
+      System.out.println("ws1 " + ws1);
+    }
 
-    // if (wa3 > 50 && wa3 < 45) {
-    // wa3 = wa3 * 1.0;
-    // }
+    if (wa2 < -120 && wa2 > -139) {
+      ws2 = ws2 * -1.0;
+      System.out.println("ws2 " + ws2);
+    }
+
+    // wa3, wa4, -37, -137
+    if (wa3 < -20 && wa3 > -39) {
+      ws3 = ws3 * -1.0;
+      System.out.println("ws3 " + ws3);
+    }
+
+    if (wa4 < -120 && wa2 > 20) {
+      ws4 = ws4 * -1.0;
+      System.out.println("ws4 " + ws4);
+    }
+
+    // if z is greator than 0.15 then rotate
+    if (z >= 0.15) {
+      wa1 = 60;
+      wa2 = 140;
+
+      wa3 = -140;
+      wa4 = -60;
+    }
+
+    if (z <= -0.15) {
+      wa1 = 60;
+      wa2 = 140;
+
+      wa3 = -140;
+      wa4 = -60;
+    }
+
+    frontRightAngle.setPosition(wa1);
+    frontLeftAngle.setPosition(wa2);
+    backLeftAngle.setPosition(wa3);
+    backRightAngle.setPosition(wa4);
+
+    frontRightPower.set(MOTOR_OUTPUT, ws1);
+    frontLeftPower.set(MOTOR_OUTPUT, ws2);
+    backLeftPower.set(MOTOR_OUTPUT, ws3);
+    backRightPower.set(MOTOR_OUTPUT, ws4);
+
+    SmartDashboard.putBoolean("ws1", false);
+    SmartDashboard.putBoolean("ws2", false);
+    SmartDashboard.putBoolean("ws3", false);
+    SmartDashboard.putBoolean("ws4", false);
 
     SmartDashboard.putNumber("wa1", wa1);
     SmartDashboard.putNumber("wa2", wa2);
@@ -140,28 +186,33 @@ public class DriveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("ws4", ws4);
 
     SmartDashboard.putNumber("getPos", frontRight.getPosition());
-
-    // angle motors
-
-    frontRightAngle.setPosition(wa1);
-    frontLeftAngle.setPosition(wa2);
-
-    // backLeftAngle.setPosition(wa3);
-    backRightAngle.setPosition(wa4);
-
     SmartDashboard.putNumber("right front cancoder", frontRight.getPosition());
-
-    // movement motors
-
-    frontRightPower.set(MOTOR_OUTPUT, ws1);
-    frontLeftPower.set(MOTOR_OUTPUT, ws2);
-
-    // backLeftPower.set(MOTOR_OUTPUT, ws3);
-    backRightPower.set(MOTOR_OUTPUT, ws4);
   }
 
+  public void setMode() {
+    this.backRightPower.setNeutralMode(NeutralMode.Brake);
+    this.backLeftPower.setNeutralMode(NeutralMode.Brake);
+
+    this.frontLeftPower.setNeutralMode(NeutralMode.Brake);
+    this.frontRightPower.setNeutralMode(NeutralMode.Brake);
+  }
+
+  // public void rotate(double _power) {
+  // this.frontLeftAngle.setPosition(-160);
+  // this.frontRightAngle.setPosition(160);
+
+  // this.backRightAngle.setPosition(-130);
+  // this.backLeftAngle.setPosition(-100);
+
+  // this.frontLeftPower.set(ControlMode.PercentOutput, _power);
+  // this.frontRightPower.set(ControlMode.PercentOutput, _power);
+
+  // this.backRightPower.set(ControlMode.PercentOutput, _power);
+  // this.backLeftPower.set(ControlMode.PercentOutput, _power);
+  // }
+
   public void ZeroAll() {
-    // this.backLeftAngle.Zero();
+    this.backLeftAngle.Zero();
     this.backRightAngle.Zero();
     this.frontLeftAngle.Zero();
     this.frontRightAngle.Zero();
@@ -170,10 +221,6 @@ public class DriveSubsystem extends SubsystemBase {
     this.frontRight.setPosition(0);
     this.backLeft.setPosition(0);
     this.backRight.setPosition(0);
-  }
-
-  public void Calibrate() {
-
   }
 
   public boolean isCalibrated() {
