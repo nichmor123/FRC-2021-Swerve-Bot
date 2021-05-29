@@ -67,7 +67,7 @@ public class DriveSubsystem extends SubsystemBase {
     double z = m_baseJS.getRawAxis(4);
 
     // the -x is to invert the x axis
-    double FWD = -y;
+    double FWD = y;
     double STR = -x;
     double RCW = z;
 
@@ -143,8 +143,11 @@ public class DriveSubsystem extends SubsystemBase {
       System.out.println("ws4 " + ws4);
     }
 
+    SmartDashboard.putNumber("joystick z", z);
+
     // if z is greator than 0.15 then rotate
-    if (z >= 0.15) {
+    double senitivity = 0.05;
+    if (z >= senitivity) {
       wa1 = 60;
       wa2 = 140;
 
@@ -152,12 +155,12 @@ public class DriveSubsystem extends SubsystemBase {
       wa4 = -60;
     }
 
-    if (z <= -0.15) {
-      wa1 = 60;
-      wa2 = 140;
+    if (z <= -senitivity) {
+      wa1 = -140;
+      wa2 = -60;
 
-      wa3 = -140;
-      wa4 = -60;
+      wa3 = 60;
+      wa4 = 140;
     }
 
     frontRightAngle.setPosition(wa1);
